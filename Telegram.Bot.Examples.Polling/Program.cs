@@ -22,7 +22,7 @@ namespace Telegram.Bot.Examples.Echo
             Bot = new TelegramBotClient(Configuration.BotToken);
 
             var me = await Bot.GetMeAsync();
-            Console.Title = me.Username;
+            Console.Title = me.Username ?? "My Bot!";
 
             var cts = new CancellationTokenSource();
 
@@ -47,11 +47,11 @@ namespace Telegram.Bot.Examples.Echo
                 // UpdateType.ShippingQuery:
                 // UpdateType.PreCheckoutQuery:
                 // UpdateType.Poll:
-                UpdateType.Message            => BotOnMessageReceived(update.Message),
-                UpdateType.EditedMessage      => BotOnMessageReceived(update.EditedMessage),
-                UpdateType.CallbackQuery      => BotOnCallbackQueryReceived(update.CallbackQuery),
-                UpdateType.InlineQuery        => BotOnInlineQueryReceived(update.InlineQuery),
-                UpdateType.ChosenInlineResult => BotOnChosenInlineResultReceived(update.ChosenInlineResult),
+                UpdateType.Message            => BotOnMessageReceived(update.Message!),
+                UpdateType.EditedMessage      => BotOnMessageReceived(update.EditedMessage!),
+                UpdateType.CallbackQuery      => BotOnCallbackQueryReceived(update.CallbackQuery!),
+                UpdateType.InlineQuery        => BotOnInlineQueryReceived(update.InlineQuery!),
+                UpdateType.ChosenInlineResult => BotOnChosenInlineResultReceived(update.ChosenInlineResult!),
                 _                             => UnknownUpdateHandlerAsync(update)
             };
 
@@ -71,7 +71,7 @@ namespace Telegram.Bot.Examples.Echo
             if (message.Type != MessageType.Text)
                 return;
 
-            var action = (message.Text.Split(' ').First()) switch
+            var action = (message.Text?.Split(' ').First()) switch
             {
                 "/inline"   => SendInlineKeyboard(message),
                 "/keyboard" => SendReplyKeyboard(message),
@@ -115,14 +115,15 @@ namespace Telegram.Bot.Examples.Echo
 
             static async Task<Message> SendReplyKeyboard(Message message)
             {
-                ReplyKeyboardMarkup replyKeyboardMarkup = new (
-                    new KeyboardButton[][]
+                ReplyKeyboardMarkup replyKeyboardMarkup =
+                    new(                    new KeyboardButton[][]
                     {
                         new KeyboardButton[] { "1.1", "1.2" },
                         new KeyboardButton[] { "2.1", "2.2" },
-                    },
-                    resizeKeyboard: true
-                );
+                    })
+                    {
+                        ResizeKeyboard = true
+                    };
 
                 return await Bot.SendTextMessageAsync(chatId: message.Chat.Id,
                                                       text: "Choose",
@@ -180,6 +181,8 @@ namespace Telegram.Bot.Examples.Echo
             await Bot.AnswerCallbackQueryAsync(callbackQuery.Id,
                                                $"Received {callbackQuery.Data}");
 
+            if (callbackQuery.Message is null)
+                return;
             await Bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id,
                                            $"Received {callbackQuery.Data}");
         }
@@ -190,7 +193,7 @@ namespace Telegram.Bot.Examples.Echo
         {
             Console.WriteLine($"Received inline query from: {inlineQuery.From.Id}");
 
-            InlineQueryResultBase[] results = {
+            InlineQueryResult[] results = {
                 // displayed result
                 new InlineQueryResultArticle(
                     id: "3",

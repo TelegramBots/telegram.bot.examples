@@ -8,7 +8,7 @@ namespace LambdaBot.Tests
 {
     public class TraceFixture : IDisposable
     {
-        private static readonly String _traceHeaderValue = "Root=" + "1-5d66d2fe-8e6fcab805a0833803735bc8" + ";Parent=53995c3f42cd8ad8;Sampled=1";
+        private static readonly string _traceHeaderValue = "Root=" + "1-5d66d2fe-8e6fcab805a0833803735bc8" + ";Parent=53995c3f42cd8ad8;Sampled=1";
 
         public TraceFixture()
         {
@@ -27,7 +27,7 @@ namespace LambdaBot.Tests
 
     public class FunctionTest : IClassFixture<TraceFixture>
     {
-        TraceFixture fixture;
+        readonly TraceFixture fixture;
 
         [Fact]
         public void TestFunction()
@@ -35,9 +35,11 @@ namespace LambdaBot.Tests
             var function = new Function();
             var context = new TestLambdaContext();
             var input = new JObject();
+
             var task = function.FunctionHandler(input, context);
             task.Wait(7000);
             bool completed = task.IsCompleted;
+
             Assert.True(completed);
         }
     }
